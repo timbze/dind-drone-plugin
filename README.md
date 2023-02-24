@@ -18,43 +18,18 @@ Either:
 * (Drone >= 0.8): To enable on a per-repository basis, enable the *Trusted* setting for the repository. *Or*
 * (Drone >= 0.8): To enable this plugin globally in your Drone instance, add the image name to the `DRONE_ESCALATE` environment variable that the Drone process runs under.
 
-## Usage/Migration (Drone 0.8)
-
-Modify the `build` step of the pipeline to resemble:
-
-```yaml
-pipeline:
-  ...
-  build:
-    image: quay.io/testcontainers/dind-drone-plugin
-    build_image: openjdk:8-jdk-alpine
-    # This specifies the command that should be executed to perform build, test and 
-    #  integration tests. Not to be confused with Drone's `command`:
-    cmd: ./gradlew clean check --info
-    # Not mandatory; enables pre-fetching of images in parallel with the build, so may save 
-    #  time:
-    prefetch_images:
-      - "redis:4.0.6"
-    # Not mandatory; sets up image name 'aliases' by pulling from one registry and tagging
-    #  as a different name. Intended as a simplistic mechanism for using a private registry 
-    #  rather than Docker Hub for a known set of images. Accepts a dictionary of
-    #  private registry image name to the Docker Hub image that it is a substitute for.
-    #  Note that all images are pulled synchronously before the build starts, so this is
-    #  inefficient if any unnecessary images are listed.
-    image_aliases:
-      someregistry.com/redis:4.0.6: redis:4.0.6
-```
-
-### Usage with newer drone versions
+## Usage/Migration
 
 Modify steps of the pipeline to resemble:
 
 ```yaml
 steps:
   - name: build
-    image: quay.io/testcontainers/dind-drone-plugin
+    image: timbze/dind-drone-plugin
     environment:
       CI_WORKSPACE: "/drone/src"
+      # Optional
+      EXTRA_DOCKERD_OPTIONS: --dns 8.8.8.8 208.67.222.222
     settings:
       # This specifies the command that should be executed to perform build, test and
       #  integration tests. Not to be confused with Drone's `command`:
@@ -96,6 +71,34 @@ When migrating to use this plugin from an ordinary build step, note that:
 * `commands` should be changed to `cmd`. Note that _commas_ are not supported within `cmd` lines due to the way these are passed in between Drone and this plugin.
 * `image` should be changed to `build_image`
 * `prefetch_images` is optional, but recommended. This specifies a list of images that should be pulled in parallel with your build process, thus saving some time.
+
+## Drone 0.8 or older
+
+Modify the `build` step of the pipeline to resemble:
+
+```yaml
+pipeline:
+  ...
+  build:
+    image: timbze/dind-drone-plugin
+    build_image: openjdk:8-jdk-alpine
+    # This specifies the command that should be executed to perform build, test and 
+    #  integration tests. Not to be confused with Drone's `command`:
+    cmd: ./gradlew clean check --info
+    # Not mandatory; enables pre-fetching of images in parallel with the build, so may save 
+    #  time:
+    prefetch_images:
+      - "redis:4.0.6"
+    # Not mandatory; sets up image name 'aliases' by pulling from one registry and tagging
+    #  as a different name. Intended as a simplistic mechanism for using a private registry 
+    #  rather than Docker Hub for a known set of images. Accepts a dictionary of
+    #  private registry image name to the Docker Hub image that it is a substitute for.
+    #  Note that all images are pulled synchronously before the build starts, so this is
+    #  inefficient if any unnecessary images are listed.
+    image_aliases:
+      someregistry.com/redis:4.0.6: redis:4.0.6
+```
+
 
 ## Extending
 
